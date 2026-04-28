@@ -19,7 +19,6 @@ _PALETTE = [
     (220, 130, 130), (130, 220, 130), (130, 130, 220),
 ]
 
-# RTX 4060을 믿고 GPU 강제 할당
 DEVICE = 0 if torch.cuda.is_available() else "cpu"
 model = YOLO("runs/plogging_yolo11s_real_last/weights/best.pt")
 
@@ -58,10 +57,6 @@ def _predict(image_bytes: bytes) -> tuple:
     processed_img = _preprocess_image(img)
 
     start = time.perf_counter()
-    # --- 튜닝 포인트 ---
-    # conf  : 낮출수록 미탐지 줄지만 오탐 늘어남 (0.10~0.30 사이 조정)
-    # iou   : 낮출수록 겹친 박스 제거 강화, 높이면 밀집 객체 여러 개 검출 (0.3~0.6)
-    # imgsz : 크게 할수록 작은 객체 탐지 향상, CPU에서는 속도 매우 느려짐
     results = model.predict(
         processed_img,
         conf=0.25,
