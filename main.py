@@ -1,6 +1,8 @@
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from typing import Optional
+
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 
@@ -28,11 +30,18 @@ async def dashboard():
 
 
 @app.post("/predict", response_model=PredictResponse)
-async def predict(file: UploadFile = File(...)):
+async def predict(
+    file: UploadFile = File(...),
+    latitude: Optional[float] = Form(None),
+    longitude: Optional[float] = Form(None),
+):
     """감지 결과만 반환. 백엔드 서버 간 통신용."""
     contents = await _read_image(file)
     try:
-        return run_inference(contents)
+        result = run_inference(contents)
+        result.latitude = latitude
+        result.longitude = longitude
+        return result
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     except Exception as e:

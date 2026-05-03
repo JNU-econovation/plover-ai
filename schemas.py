@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 
 class DetectionResult(BaseModel):
@@ -13,6 +13,8 @@ class PredictResponse(BaseModel):
     counts: Dict[str, int]
     detections: List[DetectionResult]
     inference_speed_ms: float
+    latitude: Optional[float] = None
+    longitude: Optional[float] = None
 
 
 class VisualizeResponse(PredictResponse):
