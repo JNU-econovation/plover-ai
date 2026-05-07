@@ -1,6 +1,9 @@
-# 모델 가중치 (용량 크고 바이너리라 Git에 올리지 않음, scp로 별도 전송)
+# 학습 결과물 및 PyTorch 가중치
 runs/
 *.pt
+
+# 배포용 ONNX 모델은 model/ 에서 관리 (추적 대상)
+# model/best.onnx → git 추적 O
 
 # Python 캐시
 __pycache__/

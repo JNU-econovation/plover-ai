@@ -3,7 +3,7 @@ from pathlib import Path
 from typing import Optional
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 from fastapi.staticfiles import StaticFiles
 
 from detector import run_inference, run_inference_with_viz
@@ -22,6 +22,11 @@ async def _read_image(file: UploadFile) -> bytes:
     if not contents:
         raise HTTPException(status_code=400, detail="빈 파일입니다.")
     return contents
+
+
+@app.get("/health")
+async def health():
+    return JSONResponse({"status": "ok"})
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -62,4 +67,5 @@ async def predict_visualize(file: UploadFile = File(...)):
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(app, host="0.0.0.0", port=8000, reload=False)
