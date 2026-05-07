@@ -6,15 +6,35 @@ import onnxruntime as ort
 from schemas import DetectionResult, PredictResponse, VisualizeResponse
 
 CLASS_NAMES = {
-    0: "담배꽁초", 1: "가구류", 2: "도기류", 3: "비닐류", 4: "스티로폼류",
-    5: "유리병류", 6: "의류", 7: "자전거", 8: "전자제품", 9: "종이류",
-    10: "캔류", 11: "페트병류", 12: "플라스틱류",
+    0: "담배꽁초",
+    1: "가구류",
+    2: "도기류",
+    3: "비닐류",
+    4: "스티로폼류",
+    5: "유리병류",
+    6: "의류",
+    7: "자전거",
+    8: "전자제품",
+    9: "종이류",
+    10: "캔류",
+    11: "페트병류",
+    12: "플라스틱류",
 }
 
 _PALETTE = [
-    (0, 220, 100), (220, 50, 50), (50, 100, 220), (220, 200, 0), (0, 200, 220),
-    (200, 0, 200), (100, 220, 50), (220, 130, 0), (0, 130, 220), (130, 0, 220),
-    (220, 130, 130), (130, 220, 130), (130, 130, 220),
+    (0, 220, 100),
+    (220, 50, 50),
+    (50, 100, 220),
+    (220, 200, 0),
+    (0, 200, 220),
+    (200, 0, 200),
+    (100, 220, 50),
+    (220, 130, 0),
+    (0, 130, 220),
+    (130, 0, 220),
+    (220, 130, 130),
+    (130, 220, 130),
+    (130, 130, 220),
 ]
 
 _IMG_SIZE = 640
@@ -38,9 +58,12 @@ def _preprocess(img: np.ndarray) -> tuple[np.ndarray, float, tuple[float, float]
     img = cv2.resize(img, (new_w, new_h), interpolation=cv2.INTER_LINEAR)
     img = cv2.copyMakeBorder(
         img,
-        int(round(dh - 0.1)), int(round(dh + 0.1)),
-        int(round(dw - 0.1)), int(round(dw + 0.1)),
-        cv2.BORDER_CONSTANT, value=(114, 114, 114),
+        int(round(dh - 0.1)),
+        int(round(dh + 0.1)),
+        int(round(dw - 0.1)),
+        int(round(dw + 0.1)),
+        cv2.BORDER_CONSTANT,
+        value=(114, 114, 114),
     )
 
     tensor = cv2.cvtColor(img, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
@@ -58,9 +81,10 @@ def _nms(boxes: np.ndarray, scores: np.ndarray, iou_threshold: float) -> list[in
         keep.append(i)
         if len(order) == 1:
             break
-        inter = (
-            np.maximum(0, np.minimum(x2[i], x2[order[1:]]) - np.maximum(x1[i], x1[order[1:]]))
-            * np.maximum(0, np.minimum(y2[i], y2[order[1:]]) - np.maximum(y1[i], y1[order[1:]]))
+        inter = np.maximum(
+            0, np.minimum(x2[i], x2[order[1:]]) - np.maximum(x1[i], x1[order[1:]])
+        ) * np.maximum(
+            0, np.minimum(y2[i], y2[order[1:]]) - np.maximum(y1[i], y1[order[1:]])
         )
         iou = inter / (areas[i] + areas[order[1:]] - inter)
         order = order[1:][iou <= iou_threshold]
@@ -101,7 +125,13 @@ def _postprocess(
         y1 = int(max(0, min(round((y1 - dh) / ratio), orig_h)))
         x2 = int(max(0, min(round((x2 - dw) / ratio), orig_w)))
         y2 = int(max(0, min(round((y2 - dh) / ratio), orig_h)))
-        results.append({"box": (x1, y1, x2, y2), "cls_id": int(class_ids[i]), "conf": float(confs[i])})
+        results.append(
+            {
+                "box": (x1, y1, x2, y2),
+                "cls_id": int(class_ids[i]),
+                "conf": float(confs[i]),
+            }
+        )
     return results
 
 
@@ -116,7 +146,16 @@ def _draw_boxes(image: np.ndarray, detections: list[dict]) -> np.ndarray:
         cv2.rectangle(annotated, (x1, y1), (x2, y2), color, 3)
         (tw, th), _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2)
         cv2.rectangle(annotated, (x1, y1 - th - 12), (x1 + tw, y1), color, -1)
-        cv2.putText(annotated, label, (x1, y1 - 8), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (255, 255, 255), 2, cv2.LINE_AA)
+        cv2.putText(
+            annotated,
+            label,
+            (x1, y1 - 8),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
+            2,
+            cv2.LINE_AA,
+        )
     return annotated
 
 
@@ -160,7 +199,9 @@ def run_inference(image_bytes: bytes) -> PredictResponse:
 
 
 def run_inference_with_viz(image_bytes: bytes) -> VisualizeResponse:
-    img, raw_detections, total_count, counts, detections, inference_ms = _predict(image_bytes)
+    img, raw_detections, total_count, counts, detections, inference_ms = _predict(
+        image_bytes
+    )
     annotated = _draw_boxes(img, raw_detections)
     _, buffer = cv2.imencode(".jpg", annotated, [cv2.IMWRITE_JPEG_QUALITY, 90])
     encoded = base64.b64encode(buffer).decode("utf-8")
